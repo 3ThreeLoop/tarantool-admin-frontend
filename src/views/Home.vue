@@ -38,14 +38,11 @@
             <div class="flex-1 overflow-y-auto overflow-x-auto">
                 <el-table :data="tableData" border style="min-width: max-content" height="100%" show-overflow-tooltip>
                     <el-table-column type="selection" width="55" />
-
-                    <el-table-column v-for="col in columns" :key="col.prop" :prop="col.prop" sortable
-                        show-overflow-tooltip>
+                    <el-table-column v-for="col in columns" :key="col.prop" :prop="col.prop" sortable show-overflow-tooltip>
                         <template #header>
-                            <div class="flex items-start gap-2">
-                                <span class="font-bold text-gray-900 text-base">{{ col.label }}</span>
-                                <span
-                                    class="text-xs text-blue-600 font-medium px-3 py-1 bg-blue-50 rounded-full border border-blue-200">
+                            <div class="flex items-center gap-2" style="flex: 1;">
+                                <span class="font-bold text-base">{{ col.label }}</span>
+                                <span class="text-xs border px-2 border-[#00d4ff] text-[#00d4ff] rounded-2xl">
                                     {{ col.type }}
                                 </span>
                             </div>
@@ -137,4 +134,42 @@ onUnmounted(() => {
     padding: 8px;
     font-size: 14px;
 }
+
+:deep(.el-table th .cell) {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+}
+
+/* Ensure your custom content doesn't take full width */
+:deep(.el-table th .cell > div) {
+    flex: 1;
+}
+:deep(.el-table .el-table__header-wrapper .el-table__header thead th) {
+  background-color: black !important; /* Your desired color */
+}
+
+/* Only apply space-between to headers that have your custom template */
+:deep(.el-table th .cell) {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important; /* Default to center */
+}
+
+/* Only for headers with multiple child elements (your custom template) */
+:deep(.el-table th .cell:has(div.flex)) {
+    justify-content: space-between !important;
+}
+
+/* Ensure selection column stays centered */
+:deep(.el-table-column--selection .cell) {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 100%;
+}
+/* Optional: Change header text color */
+/* :deep(.el-table .el-table__header-wrapper .el-table__header thead th .cell) {
+  color: #00d4ff !important;
+} */
 </style>

@@ -179,8 +179,17 @@
   --el-table-header-bg-color: red;
   --el-text-color-secondary: #ffffff;
   --el-text-color-primary: #0099ff;
-  --el-bg-color: ;
+  --el-bg-color: #111;
   --el-fill-color-light: rgba(255, 255, 255, 0.1);
+  --el-color-success-light-9: rgba(22, 51, 15, 0.85);  
+  --el-color-error-light-9: rgba(60, 0, 0, 0.85);  
+  --el-color-warning-light-9: rgba(66, 45, 0, 0.85); 
+  --el-color-info-light-9: rgba(0, 32, 70, 0.85); 
+  --el-color-error-light-8: rgba(100, 20, 20, 0.5);    
+  --el-color-success-light-8: rgba(40, 80, 30, 0.5);    
+  --el-color-warning-light-8: rgba(110, 80, 10, 0.5);   
+  --el-color-info-light-8: rgba(30, 70, 130, 0.5);
+  --el-dialog-bg-color: #111,
 }
 
 .el-popper.is-customized {
@@ -195,3 +204,40 @@
   background: linear-gradient(135deg, #0a0a23, #1a1a2e, #16213e);
   right: 0;
 }
+
+/* Default is top-right, so no need to override it */
+
+.custom-toast-top-right {
+  right: 20px !important;
+  bottom: auto !important;
+  left: auto !important;
+  transform: none !important;
+  position: fixed !important;
+}
+
+.custom-toast-top-left {
+  left: 20px !important;
+  bottom: auto !important;
+  right: auto !important;
+  transform: none !important;
+  position: fixed !important;
+}
+
+.custom-toast-bottom-right {
+  bottom: 20px !important;
+  right: 20px !important;
+  top: auto !important;
+  left: auto !important;
+  transform: none !important;
+  position: fixed !important;
+}
+
+.custom-toast-bottom-left {
+  bottom: 20px !important;
+  left: 20px !important;
+  top: auto !important;
+  right: auto !important;
+  transform: none !important;
+  position: fixed !important;
+}
+

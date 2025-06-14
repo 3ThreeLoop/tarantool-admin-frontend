@@ -34,7 +34,7 @@
                     <el-input :formatter="(value: any) => `${value}`.toUpperCase()"
                         style="--el-input-bg-color: rgba(0, 0, 0, 0.6); --el-input-border-color: rgba(255, 255, 255, 0.2);"
                         size="large" v-model="ruleForm.username" type="text" autocomplete="off"
-                        placeholder="Enter Your Username" :prefix-icon="User" />
+                        placeholder="Enter Your Username" :prefix-icon="User" @input="onUsernameInput" />
                 </el-form-item>
                 <el-form-item style="--el-text-color-regular: white;" size="large" prop="password" class="capitalize">
                     <el-input
@@ -55,19 +55,20 @@
 
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
-import type { FormInstance, FormRules } from 'element-plus'
+import {type FormInstance, type FormRules } from 'element-plus'
 import { Lock, User } from '@element-plus/icons-vue'
+import { useAuthStore } from '@/stores/auth/store'
+import { showToast } from '@/utils/toast'
+import { useRouter } from 'vue-router'
 
 const ruleFormRef = ref<FormInstance>()
+const authStore = useAuthStore()
+const router = useRouter()
 
 const validateUsername = (rule: any, value: any, callback: any) => {
     if (value === '') {
         callback(new Error('Please input the username'))
     } else {
-        if (ruleForm.username !== '') {
-            if (!ruleFormRef.value) return
-            ruleFormRef.value.validateField('username')
-        }
         callback()
     }
 }
@@ -75,10 +76,6 @@ const validatePass = (rule: any, value: any, callback: any) => {
     if (value === '') {
         callback(new Error('Please input the password'))
     } else {
-        if (ruleForm.username !== '') {
-            if (!ruleFormRef.value) return
-            ruleFormRef.value.validateField('password')
-        }
         callback()
     }
 }
@@ -94,14 +91,32 @@ const rules = reactive<FormRules<typeof ruleForm>>({
 })
 
 const submitForm = (formEl: FormInstance | undefined) => {
-    if (!formEl) return
-    formEl.validate((valid) => {
-        if (valid) {
-            console.log('submit!')
-        } else {
-            console.log('error submit!')
-        }
-    })
+  if (!formEl) return
+  formEl.validate((valid) => {
+    if (valid) {
+      authStore
+        .login(
+          {
+            user_name: ruleForm.username,
+            password: ruleForm.password,
+          },
+        ).then(() => {
+          // ✅ Redirect on successful login
+          router.push('/')
+        })
+    } else {
+      showToast({
+        message: 'Please correct the errors in the form.',
+        type: 'warning',
+      })
+    }
+  })
+}
+
+const onUsernameInput = (val: string) => {
+  // Remove spaces and convert to uppercase
+  const cleanVal = val.replace(/\s+/g, '').toUpperCase()
+  ruleForm.username = cleanVal
 }
 
 const resetForm = (formEl: FormInstance | undefined) => {

@@ -7,7 +7,7 @@
         <img src="/public/images/tarantool-logo-color.svg" alt="logo" class="w-[150px] h-full object-contain">
         <span class="absolute right-0 -top-1 uppercase font-bold text-inter text-xs text-[#06b6d4]">admin</span>
       </div>
-    </div>     
+    </div>
 
     <!-- Right Side - Language & Profile -->
     <div class="right-side flex items-center space-x-4">
@@ -77,13 +77,27 @@
       </el-dropdown>
     </div>
   </div>
+
+  <!-- logout dialog -->
+  <el-dialog v-model="showLogoutDialog" title="Confirm Logout" width="350px" align-center class="custom-dialog">
+    <span class="text-gray-300">Are you sure you want to logout?</span>
+    <template #footer>
+      <span class="dialog-footer flex justify-end gap-2">
+        <el-button size="small" @click="showLogoutDialog = false">Cancel</el-button>
+        <el-button type="danger" size="small" @click="authStore.logout(), router.push('/login')">Logout</el-button>
+      </span>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup>
+import { useAuthStore } from '@/stores/auth/store'
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
+const authStore = useAuthStore()
+const showLogoutDialog = ref(false)
 
 // User data
 const userName = ref('Admin User')
@@ -117,7 +131,7 @@ const handleUserCommand = (command) => {
       break
     case 'logout':
       // Handle logout logic
-      console.log('Logout user')
+      showLogoutDialog.value = true
       break
   }
 }
@@ -132,5 +146,19 @@ const handleUserCommand = (command) => {
 
 :deep(.el-dropdown-menu__item:hover) {
   background-color: rgba(6, 182, 212, 0.1);
+}
+
+.custom-dialog :deep(.el-dialog__header) {
+  border-bottom: 1px solid rgba(6, 182, 212, 0.2);
+}
+
+.custom-dialog :deep(.el-dialog) {
+  background-color: #1e293b !important;
+  color: white;
+}
+
+.custom-dialog :deep(.el-button--danger) {
+  background-color: #ef4444;
+  border-color: #ef4444;
 }
 </style>
