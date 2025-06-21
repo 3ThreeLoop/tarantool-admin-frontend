@@ -27,7 +27,7 @@ export const showToast = ({
     duration = 3000,
     offset = 20,
     desc,
-    position = 'top-right',
+    position = 'bottom-right',
 }: ToastOptions & { position?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left' }) => {
     const colorVariable = typeColorMap[type]
     const positionClass = `custom-toast-${position}`
