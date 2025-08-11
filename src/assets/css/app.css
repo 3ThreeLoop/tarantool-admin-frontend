@@ -172,7 +172,7 @@
   --el-bg-color-overlay: #0a0a23;
   --el-text-color-regular: white;
   --el-border-color-light: #111;
-  --el-color-primary-light-9: #111;
+  --el-color-primary-light-9: rgba(6, 182, 212, .1);
   --el-border-color-lighter: #374151;
   --el-input-bg-color: rgba(0, 0, 0, 0.6);
   --el-fill-color-blank: rgba(0, 0, 0, 0.6);

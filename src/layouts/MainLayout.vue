@@ -3,7 +3,7 @@
         <Header />
         <div class="w-full h-[calc(100vh-65px)] flex items-center overflow-auto">
             <Sidebar />
-            <div class="w-[calc(100%-300px)] h-full bg-green-400">
+            <div class="w-[calc(100%-300px)] h-full">
                 <router-view></router-view>
             </div>
         </div>

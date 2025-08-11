@@ -23,12 +23,13 @@ export const useAuthStore = defineStore("auth", {
       this.loading = true;
       this.message = "";
       try {
+        const locale = localStorage.getItem("locale") || "en";
         const response = await axios.post(
           baseUrl + "/front/auth/login",
           payload,
           {
             headers: {
-              "Accept-Language": "en",
+              "Accept-Language": locale,
             },
           }
         );

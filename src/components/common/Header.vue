@@ -159,13 +159,22 @@ const languages = ref([
   { code: 'en', label: 'English', flag: '/public/images/flags/Flag_of_United_States.svg' },
   { code: 'km', label: 'Khmer', flag: '/public/images/flags/Flag_of_Cambodia.svg' },
 ])
-const currentLanguage = ref(languages.value[0])
-
+// const currentLanguage = ref(localStorage.getItem("locale") || "en")
+const currentLanguage = computed(() => {
+  const locale = localStorage.getItem("locale") || "en"
+  const selectedLang = languages.value.find(lang => lang.code === locale)
+  if (selectedLang) {
+    return selectedLang
+  } else {
+    return languages.value[0]
+  }
+})
 // Methods
 const handleLanguageChange = (langCode) => {
   const selectedLang = languages.value.find(lang => lang.code === langCode)
   if (selectedLang) {
     currentLanguage.value = selectedLang
+    localStorage.setItem("locale", selectedLang.code)
     // Implement your language change logic here
     console.log('Language changed to:', langCode)
   }
