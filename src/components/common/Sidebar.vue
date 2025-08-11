@@ -124,9 +124,12 @@ import { showToast } from '@/utils/toast'
 import type { ApiResponse } from '@/types/axios-response'
 import { useUserStore } from '@/stores/user'
 import type { DatabaseDetail, DBForm, TreeNode } from '@/types/tree-node'
+import { ElButton, ElDropdown, ElDropdownItem, ElDropdownMenu } from 'element-plus'
+import { useTabsStore } from '@/stores/tabs'
 
 // Reactive data
 const userStore = useUserStore()
+const tabsStore = useTabsStore()
 const loading = ref<boolean>(false)
 const showCreateDBDialog = ref<boolean>(false)
 const createDBLoading = ref<boolean>(false)
@@ -170,6 +173,7 @@ const loadUserDatabases = () => {
             db_uuid: db.db_uuid,
             level: 1,
             isLeaf: false,
+            expandFailed: false
         }))
     } else {
         treeData.value = []
@@ -194,7 +198,7 @@ const fetchDatabaseDetail = async (dbUuid: string): Promise<DatabaseDetail | nul
     } catch (error: any) {
         console.error('Failed to fetch database detail:', error)
         showToast({
-            message: 'Failed to fetch database details',
+            message: error.message,
             type: 'error'
         })
         return null
@@ -208,6 +212,7 @@ const buildSpacesWithColumns = (databaseDetail: DatabaseDetail, dbUuid: string):
         id: `${dbUuid}-${space.name}`,
         label: space.name,
         type: 'space' as const,
+        expandFailed: false,
         db_uuid: dbUuid,
         space_name: space.name,
         level: 2,
@@ -216,6 +221,7 @@ const buildSpacesWithColumns = (databaseDetail: DatabaseDetail, dbUuid: string):
             id: `${dbUuid}-${space.name}-${column.name}`,
             label: `${column.name} (${column.type}${column.is_nullable ? ', nullable' : ''})`,
             type: 'column' as const,
+            expandFailed: false,
             db_uuid: dbUuid,
             space_name: space.name,
             column_info: column,
@@ -226,30 +232,42 @@ const buildSpacesWithColumns = (databaseDetail: DatabaseDetail, dbUuid: string):
 }
 
 const loadNode = async (node: any, resolve: (data: TreeNode[]) => void) => {
-    console.log('Loading node:', node.level, node.data)
+    const nodeData = node.data as TreeNode
 
     if (node.level === 0) {
-        console.log('Root level - returning tree data:', treeData.value)
         resolve(treeData.value)
         return
     }
 
-    const nodeData = node.data as TreeNode
-
     if (nodeData.type === 'database') {
-        console.log('Loading spaces and columns for database:', nodeData.db_uuid)
-        const databaseDetail = await fetchDatabaseDetail(nodeData.db_uuid!)
+        try {
+            const databaseDetail = await fetchDatabaseDetail(nodeData.db_uuid!)
 
-        if (databaseDetail) {
-            const spacesWithColumns = buildSpacesWithColumns(databaseDetail, nodeData.db_uuid!)
-            console.log('Loaded spaces with columns:', spacesWithColumns)
-            resolve(spacesWithColumns)
-        } else {
-            resolve([])
+            if (databaseDetail) {
+                const children = buildSpacesWithColumns(databaseDetail, nodeData.db_uuid!)
+                resolve(children)
+
+                // Mark success
+                nodeData.expandFailed = false
+            } else {
+                throw new Error('No data')
+            }
+        } catch (err) {
+            console.error('Failed to load database:', err)
+
+            // Mark failed
+            nodeData.expandFailed = true
+
+            node.loaded = false
+            node.loading = false
+            node.childNodes = []
+            node.data.children = undefined
+
+            setTimeout(() => {
+                if (node.loading) node.loading = false
+            }, 300)
         }
     } else if (nodeData.type === 'space') {
-        // Since we already have the columns in the space node, just return them
-        console.log('Loading columns for space:', nodeData.space_name)
         resolve(nodeData.children || [])
     } else {
         resolve([])
@@ -313,8 +331,11 @@ const resetForm = () => {
     }
 }
 
-const handleNodeClick = (data: TreeNode) => {
+const handleNodeClick = (data: TreeNode, e: MouseEvent) => {
     console.log('Node clicked:', data)
+    if ((e.target as HTMLElement).closest('.el-dropdown')) {
+        return; // Ignore dropdown clicks
+    }
     // You can add additional logic here for when nodes are clicked
     // For example, select the node for some operation
 }
@@ -325,8 +346,8 @@ const renderContent = (_: any, { data }: any) => {
 
     switch (data.type) {
         case 'database':
-            iconName = 'mdi:database'
-            iconColor = '#06b6d4'
+            iconName = data.expandFailed ? 'mdi:database-off' : 'mdi:database'
+            iconColor = data.expandFailed ? '#ef4444' : '#06b6d4'
             break
         case 'space':
             iconName = 'mdi:table'
@@ -422,6 +443,43 @@ const renderContent = (_: any, { data }: any) => {
         }
     }
 
+    const dropdownMenu = data.type === 'database'
+        ? h(ElDropdown, {
+            trigger: 'click',
+            onCommand: (command: string) => handleDbCommand(command, data),
+        }, {
+            default: () =>
+                h(ElButton, {
+                    icon: h(Icon, { icon: 'mdi:dots-vertical' }),
+                    size: 'small',
+                    circle: true,
+                    plain: true,
+                    onClick: (e: MouseEvent) => e.stopPropagation()
+                }),
+            dropdown: () =>
+                h(ElDropdownMenu, {}, [
+                    h(ElDropdownItem, { command: 'query' }, {
+                        default: () => [
+                            h(Icon, { icon: 'mdi:database-search', class: 'mr-2' }),
+                            'Query'
+                        ]
+                    }),
+                    h(ElDropdownItem, { command: 'update' }, {
+                        default: () => [
+                            h(Icon, { icon: 'mdi:database-edit', class: 'mr-2' }),
+                            'Update'
+                        ]
+                    }),
+                    h(ElDropdownItem, { command: 'delete' }, {
+                        default: () => [
+                            h(Icon, { icon: 'mdi:database-remove', class: 'mr-2 text-red-500' }),
+                            'Delete'
+                        ]
+                    }),
+                ])
+        })
+        : null
+
     return h('div', {
         class: 'tree-node-content flex items-center gap-2 min-w-0 w-full',
         onMouseenter: handleMouseEnter,
@@ -435,8 +493,33 @@ const renderContent = (_: any, { data }: any) => {
                 class: `tree-label whitespace-nowrap inline-block ${data.type === 'column' && data.column_info?.is_nullable ? 'opacity-75' : ''}`,
             }, data.label)
         ]),
+
+        dropdownMenu
     ])
 }
+
+const handleDbCommand = (command: string, db: TreeNode) => {
+    switch (command) {
+        case 'query':
+            tabsStore.addTab({
+                uuid: `${db.db_uuid}`,
+                title: `(${db.label}) ${db.db_uuid}`,
+                name: `${db.label}`,
+                sql_query: ''
+            })
+            // openQueryModal(node)
+            break
+        case 'update':
+            console.log('Update DB:', db)
+            // openUpdateForm(node)
+            break
+        case 'delete':
+            console.log('Delete DB:', db)
+            // confirmAndDelete(node)
+            break
+    }
+}
+
 
 // Fixed animation function using direct CSS animation with transform
 const checkAndAnimateOverflow = (labelEl: HTMLElement, containerEl: HTMLElement) => {
@@ -621,5 +704,16 @@ watch(
     .tree-label {
         transition: none;
     }
+}
+
+/* Custom dropdown styles */
+:deep(.el-dropdown-menu) {
+    background-color: #1e293b;
+    border: 1px solid rgba(6, 182, 212, 0.2);
+    min-width: 280px;
+}
+
+:deep(.el-dropdown-menu__item:hover) {
+    background-color: rgba(6, 182, 212, 0.1);
 }
 </style>

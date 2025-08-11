@@ -10,7 +10,7 @@ import 'element-plus/dist/index.css'
 import './assets/css/app.css'
 
 const app = createApp(App)
-
+sdasda
 app.use(createPinia())
 app.use(router)
 app.use(ElementPlus)

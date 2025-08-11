@@ -1,5 +1,6 @@
 <template>
-    <div class="h-full flex flex-col select-none">
+    <!-- QUERY BLOCK - Only show when tabs exist -->
+    <div v-if="tabs.length > 0" class="h-full flex flex-col select-none">
 
         <!-- Top: Query Area -->
         <div :style="{ height: topHeight + 'px' }" ref="topPane"
@@ -45,9 +46,9 @@
                         </el-button>
                     </el-tooltip>
                 </el-button-group>
-                <el-tabs v-model="editableTabsValue" type="card" class="demo-tabs flex-1" editable tab-position="top">
-                    <el-tab-pane v-for="item in editableTabs" :key="item.name" :label="item.title" :name="item.name"
-                        lazy>
+                <el-tabs v-model="activeTab" type="card" @tab-remove="removeTab" class="demo-tabs flex-1" editable
+                    tab-position="top">
+                    <el-tab-pane v-for="item in tabs" :key="item.uuid" :label="item.title" :name="item.uuid" lazy>
                     </el-tab-pane>
                 </el-tabs>
             </div>
@@ -197,6 +198,232 @@
             </div>
         </div>
     </div>
+
+    <!-- WELCOME BLOCK - Show when no tabs exist -->
+    <div v-else class="h-full flex flex-col">
+
+        <!-- Welcome Content -->
+        <div class="flex-1 overflow-y-auto">
+            <div class="min-h-full flex items-center justify-center p-4">
+                <div class="max-w-2xl text-center w-full">
+                    <!-- Main Icon -->
+                    <div class="mb-6">
+                        <!-- <Icon icon="material-symbols:database" width="80" height="80"
+                            class="mx-auto text-[#00d4ff] opacity-60" /> -->
+                        <img src="/public/images/feature-tarantool.png" alt="tarantool-feature"
+                            class="h-56 w-full object-contain">
+                    </div>
+
+                    <!-- Welcome Text -->
+                    <h2 class="text-2xl font-bold text-white mb-3">
+                        Ready to Query Your Database
+                    </h2>
+                    <p class="text-gray-300 mb-6 leading-relaxed">
+                        Create a new query tab to start writing SQL queries and exploring your data.
+                    </p>
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col sm:flex-row gap-3 justify-center mb-8">
+                        <el-button type="primary" size="large" color="#00d4ff" class="px-6 py-2"
+                            @click="showCreateDBDialog = true">
+                            <Icon icon="material-symbols:add" width="18" height="18" class="mr-2" />
+                            Create New Database Connection
+                        </el-button>
+                        <el-button size="large" @click="showSelectDBDialog = true" class="px-6 py-2" plain>
+                            <Icon icon="carbon:query" width="18" height="18" class="mr-2" />
+                            Start Query
+                        </el-button>
+                    </div>
+
+                    <!-- Quick Tips -->
+                    <div class="grid md:grid-cols-3 gap-4 text-left mb-6">
+                        <div class="bg-black/30 rounded-lg p-4 border border-gray-700/50">
+                            <div class="flex items-center gap-2 mb-2">
+                                <Icon icon="mingcute:play-fill" width="20" height="20" class="text-[#00d4ff]" />
+                                <h3 class="font-semibold text-white text-sm">Quick Execute</h3>
+                            </div>
+                            <p class="text-gray-400 text-xs">
+                                Press <kbd class="px-1 py-0.5 bg-gray-800 rounded text-xs">Ctrl+Enter</kbd>
+                                or <kbd class="px-1 py-0.5 bg-gray-800 rounded text-xs">F5</kbd> to run queries
+                            </p>
+                        </div>
+
+                        <div class="bg-black/30 rounded-lg p-4 border border-gray-700/50">
+                            <div class="flex items-center gap-2 mb-2">
+                                <Icon icon="material-symbols:code" width="20" height="20" class="text-[#00d4ff]" />
+                                <h3 class="font-semibold text-white text-sm">SQL Formatting</h3>
+                            </div>
+                            <p class="text-gray-400 text-xs">
+                                Auto-format your SQL queries for better readability
+                            </p>
+                        </div>
+
+                        <div class="bg-black/30 rounded-lg p-4 border border-gray-700/50">
+                            <div class="flex items-center gap-2 mb-2">
+                                <Icon icon="material-symbols:download" width="20" height="20" class="text-[#00d4ff]" />
+                                <h3 class="font-semibold text-white text-sm">Export Results</h3>
+                            </div>
+                            <p class="text-gray-400 text-xs">
+                                Export query results to CSV format
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Footer Note -->
+                    <div class="pt-4 border-t border-gray-700/50">
+                        <p class="text-gray-500 text-xs">
+                            💡 Tip: You can have multiple query tabs open and switch between them easily
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create DB Connection Dialog -->
+    <el-dialog v-model="showCreateDBDialog" :show-close="false" title="Create DB Connection" width="450px" align-center
+        class="custom-dialog !bg-[#0A0A12] border !border-[var(--el-border-color)] !rounded-2xl">
+
+        <el-form :model="dbForm" label-width="100px" class="space-y-4 my-4">
+            <el-form-item label="DB Name" class="!mb-4">
+                <el-input v-model="dbForm.db_name" placeholder="Enter database name"
+                    class="!bg-[#1a1a2e] !border-[var(--el-border-color)]" />
+            </el-form-item>
+
+            <el-form-item label="Host" class="!mb-4">
+                <el-input v-model="dbForm.host" placeholder="Enter host address"
+                    class="!bg-[#1a1a2e] !border-[var(--el-border-color)]" />
+            </el-form-item>
+
+            <el-form-item label="Port" class="!mb-4">
+                <el-input-number v-model="dbForm.port" :min="1" :max="65535" placeholder="Enter port number"
+                    class="!bg-[#1a1a2e] !border-[var(--el-border-color)] w-full" />
+            </el-form-item>
+
+            <el-form-item label="Username" class="!mb-4">
+                <el-input v-model="dbForm.username" placeholder="Enter username"
+                    class="!bg-[#1a1a2e] !border-[var(--el-border-color)]" />
+            </el-form-item>
+
+            <el-form-item label="Password" class="!mb-4">
+                <el-input v-model="dbForm.password" type="password" placeholder="Enter password" show-password
+                    class="!bg-[#1a1a2e] !border-[var(--el-border-color)]" />
+            </el-form-item>
+        </el-form>
+
+        <template #header="{ close, titleId, titleClass }">
+            <div class="custom-dialog-header flex justify-between border-b pb-3 !border-[var(--el-border-color)]">
+                <h3 :id="titleId" :class="titleClass"
+                    class="custom-dialog-title flex font-semibold !text-[#06b6d4] items-center gap-2">
+                    <Icon icon="proicons:database-add" width="24" height="24" />
+                    Create DB Connection
+                </h3>
+                <el-button :icon="Close" circle @click="close" plain />
+            </div>
+        </template>
+
+        <template #footer>
+            <span class="dialog-footer flex justify-end gap-2">
+                <el-button size="large" @click="showCreateDBDialog = false" plain>
+                    Cancel
+                </el-button>
+                <el-button size="large" @click="createDBConnection" color="#06b6d4" :disabled="!isFormValid"
+                    :loading="createDBLoading">
+                    Create Connection
+                </el-button>
+            </span>
+        </template>
+    </el-dialog>
+
+    <!-- Select Database Dialog -->
+    <el-dialog v-model="showSelectDBDialog" :show-close="false" title="Select Database" width="500px" align-center
+        class="custom-dialog !bg-[#0A0A12] border !border-[var(--el-border-color)] !rounded-2xl">
+
+        <!-- Search Input -->
+        <div class="mb-4">
+            <el-input v-model="dbSearchQuery" placeholder="Search databases..." clearable
+                class="!bg-[#1a1a2e] !border-[var(--el-border-color)]">
+                <template #prefix>
+                    <Icon icon="material-symbols:search" width="18" height="18" class="text-gray-400" />
+                </template>
+            </el-input>
+        </div>
+
+        <!-- Database List -->
+        <div class="max-h-80 overflow-y-auto">
+            <div v-if="loadingDatabases" class="flex justify-center items-center py-8">
+                <el-icon class="is-loading text-[#00d4ff] mr-2">
+                    <Loading />
+                </el-icon>
+                <span class="text-gray-300">Loading databases...</span>
+            </div>
+
+            <div v-else-if="databases.length === 0" class="text-center py-8">
+                <Icon icon="material-symbols:database-off" width="48" height="48" class="mx-auto text-gray-500 mb-2" />
+                <p class="text-gray-400">No databases found</p>
+                <p class="text-gray-500 text-sm mt-1">Create a new database connection to get started</p>
+            </div>
+
+            <div v-else class="space-y-2">
+                <div v-for="(database, index) in databases" :key="index" @click="selectDatabase(database)"
+                    class="flex items-center justify-between p-4 bg-black/30 rounded-lg border border-gray-700/50 hover:border-[#00d4ff]/50 hover:bg-black/50 cursor-pointer transition-all duration-200 group">
+
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-[#00d4ff]/10 rounded-lg flex items-center justify-center">
+                            <Icon icon="material-symbols:database" width="20" height="20" class="text-[#00d4ff]" />
+                        </div>
+                        <div>
+                            <h4 class="text-white font-medium group-hover:text-[#00d4ff] transition-colors">
+                                {{ database.db_name }}
+                            </h4>
+                            <!-- <p class="text-gray-400 text-sm">
+                                {{ database.host }}:{{ database.port }}
+                            </p> -->
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <!-- Connection Status -->
+                        <div class="flex items-center gap-1">
+                            <!-- <div :class="[
+                                'w-2 h-2 rounded-full',
+                                database.connected ? 'bg-green-500' : 'bg-gray-500'
+                            ]"></div>
+                            <span class="text-xs text-gray-400">
+                                {{ database.connected ? 'Connected' : 'Disconnected' }}
+                            </span> -->
+                        </div>
+
+                        <Icon icon="material-symbols:arrow-forward-ios" width="16" height="16"
+                            class="text-gray-400 group-hover:text-[#00d4ff] transition-colors" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <template #header="{ close, titleId, titleClass }">
+            <div class="custom-dialog-header flex justify-between border-b pb-3 !border-[var(--el-border-color)]">
+                <h3 :id="titleId" :class="titleClass"
+                    class="custom-dialog-title flex font-semibold !text-[#06b6d4] items-center gap-2">
+                    <Icon icon="material-symbols:database" width="24" height="24" />
+                    Select Database to Query
+                </h3>
+                <el-button :icon="Close" circle @click="close" plain />
+            </div>
+        </template>
+
+        <template #footer>
+            <span class="dialog-footer flex justify-between">
+                <!-- <el-button size="large" @click="handleCreateNewConnection" plain>
+                    <Icon icon="material-symbols:add" width="16" height="16" class="mr-1" />
+                    New Connection
+                </el-button> -->
+                <el-button size="large" @click="showSelectDBDialog = false" plain>
+                    Cancel
+                </el-button>
+            </span>
+        </template>
+    </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -204,9 +431,15 @@ import { ref, onUnmounted, onMounted, computed, nextTick } from 'vue'
 import { Icon } from '@iconify/vue'
 import Monaco from '@/components/monaco-editor/Monaco.vue'
 import axiosInstance from '@/common/axios'
-import { ElMessage } from 'element-plus'
 import type { ApiResponse } from '@/types/axios-response'
 import { showToast } from '@/utils/toast'
+import { useTabsStore } from '@/stores/tabs'
+import type { DBForm, UserDatabase } from '@/types/tree-node'
+import {
+    Close
+} from '@element-plus/icons-vue'
+import type { Database, DatabaseRequest } from '@/types/database'
+import { useUserStore } from '@/stores/user'
 
 // Interfaces
 interface Column {
@@ -215,10 +448,54 @@ interface Column {
     type: string
 }
 
-interface Tab {
-    title: string
-    name: string
-    content: string
+const dbForm = ref<DBForm>({
+    db_name: '',
+    host: '',
+    port: 3306,
+    username: '',
+    password: ''
+})
+
+const tabsStore = useTabsStore()
+const userStore = useUserStore()
+const showCreateDBDialog = ref<boolean>(false)
+const createDBLoading = ref<boolean>(false)
+const showSelectDBDialog = ref<boolean>(false)
+const loadingDatabases = ref<boolean>(false)
+const dbSearchQuery = ref<string>('')
+
+const selectDatabase = (database: UserDatabase): void => {
+    showSelectDBDialog.value = false
+    startQueryWithDatabase(database)
+}
+
+const startQueryWithDatabase = (database: UserDatabase): void => {
+    console.log('Starting query with database:', database)
+    // emit('start-query', database)
+}
+
+const databases = computed(() => {
+    return userStore.userInfo?.user_databases.length ? userStore.userInfo.user_databases : []
+})
+
+const activeTab = computed(() => {
+    if (tabsStore.activeTabUuid) {
+        return tabsStore.activeTabUuid
+    } else {
+        return ''
+    }
+})
+
+const tabs = computed(() => {
+    if (tabsStore.tabs) {
+        return tabsStore.tabs
+    } else {
+        return []
+    }
+})
+
+const removeTab = (uuid: string) => {
+    tabsStore.removeTab(uuid)
 }
 
 // Props - removed duplicate interface and simplified
@@ -238,20 +515,67 @@ const emit = defineEmits<{
     }]
 }>()
 
-// Tab Management
-const editableTabsValue = ref<string>('2')
-const editableTabs = ref<Tab[]>([
-    {
-        title: 'Tab 1',
-        name: '1',
-        content: 'Tab 1 content',
-    },
-    {
-        title: 'Tab 2',
-        name: '2',
-        content: 'Tab 2 content',
-    },
-])
+const isFormValid = computed(() => {
+    return dbForm.value.db_name &&
+        dbForm.value.host &&
+        dbForm.value.port &&
+        dbForm.value.username &&
+        dbForm.value.password
+})
+
+const createDBConnection = async () => {
+    if (!isFormValid.value) return
+
+    createDBLoading.value = true
+
+    try {
+        const dbRequest: DatabaseRequest = {
+            db_name: dbForm.value.db_name,
+            host: dbForm.value.host,
+            port: dbForm.value.port,
+            username: dbForm.value.username,
+            password: dbForm.value.password,
+        }
+
+        const response = await axiosInstance.post("/front/database", dbRequest) as ApiResponse<{ database: Database }>
+
+        if (response.success) {
+            showToast({
+                message: response.message || 'Database connection created successfully',
+                type: "success",
+            })
+            showCreateDBDialog.value = false
+            resetForm()
+            await userStore.fetchUserInfo()
+            await nextTick()
+        } else {
+            showToast({
+                message: response.message || 'Failed to create database connection',
+                type: "error",
+                desc: response.data.error,
+            })
+        }
+    } catch (error: any) {
+        console.error('Failed to create database connection:', error)
+        showToast({
+            message: error?.message || 'Failed to create database connection',
+            type: "error",
+            desc: error?.data?.error
+        })
+    } finally {
+        createDBLoading.value = false
+    }
+}
+
+const resetForm = () => {
+    dbForm.value = {
+        db_name: '',
+        host: '',
+        port: 3306,
+        username: '',
+        password: ''
+    }
+}
 
 // SQL Editor and Query
 const sql = ref<string>("SELECT * FROM users_space")

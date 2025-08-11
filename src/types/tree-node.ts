@@ -1,7 +1,8 @@
 export interface TreeNode {
     id: string
     label: string
-    type: 'database' | 'space' | 'column'
+    type: 'database' | 'space' | 'column' | 'retry'
+    expandFailed: boolean
     db_uuid?: string
     space_name?: string
     column_info?: {
